@@ -1,5 +1,5 @@
 const CACHE = 'dayplanner-v1';
-const ASSETS = ['./index.html', './manifest.json'];
+const ASSETS = ['./', './index.html', './manifest.json', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -15,7 +15,14 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
+    fetch(e.request).then(response => {
+      return caches.open(CACHE).then(cache => {
+        cache.put(e.request, response.clone());
+        return response;
+      });
+    }).catch(() => {
+      return caches.match(e.request);
+    })
   );
 });
 

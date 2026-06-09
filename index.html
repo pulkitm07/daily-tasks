@@ -193,7 +193,7 @@ function fmt(t){
   return `${h%12||12}:${String(m).padStart(2,'0')} ${h<12?'am':'pm'}`;
 }
 function todayStr(){
-  return new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  return new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
 }
 function slotId(t){ return 'slot-'+t.replace(':','-'); }
 function timeToMs(t){
@@ -363,7 +363,7 @@ function editTask(id){
   
   let newTime = prompt('Edit time (HH:MM) in 24-hour format:', t.time);
   if(newTime === null) return;
-  if(!/^\d{1,2}:\d{2}$/.test(newTime)){ alert('Invalid time format. Use HH:MM'); return; }
+  if(!/^([01]?\d|2[0-3]):([0-5]\d)$/.test(newTime)){ alert('Invalid time format. Use HH:MM (00:00 - 23:59)'); return; }
   
   const [h,m] = newTime.split(':');
   newTime = `${h.padStart(2,'0')}:${m}`;
@@ -376,7 +376,7 @@ function editTask(id){
 function addTask(){
   let newTime = prompt('Time for new task (HH:MM) in 24-hour format:', '12:00');
   if(newTime === null) return;
-  if(!/^\d{1,2}:\d{2}$/.test(newTime)){ alert('Invalid time format. Use HH:MM'); return; }
+  if(!/^([01]?\d|2[0-3]):([0-5]\d)$/.test(newTime)){ alert('Invalid time format. Use HH:MM (00:00 - 23:59)'); return; }
   const [h,m] = newTime.split(':');
   newTime = `${h.padStart(2,'0')}:${m}`;
 
