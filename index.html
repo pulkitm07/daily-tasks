@@ -367,7 +367,7 @@ function fireReminder(next, prev){
 
 /* ── RESET ── */
 function resetDay(){
-  if(!confirm('Clear today's plan and start fresh?')) return;
+  if(!confirm("Clear today's plan and start fresh?")) return;
   tasks=[]; phase='plan'; timers.forEach(clearTimeout); timers=[];
   try{ localStorage.removeItem(STORE); }catch(e){}
   renderPlan();
