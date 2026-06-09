@@ -154,6 +154,10 @@
   .badge-done{background:var(--green-bg);color:var(--green)}
   .badge-miss{background:var(--red-bg);color:var(--red)}
 
+  .btn-icon{background:none;border:none;cursor:pointer;font-size:14px;padding:4px;color:var(--muted);opacity:0.7;display:flex;align-items:center;justify-content:center}
+  .btn-icon:active{opacity:1}
+  .item-actions{display:flex;gap:4px;margin-left:6px;flex-shrink:0}
+
   .perm-warn{
     margin:0 16px 12px;background:var(--red-bg);border:1px solid var(--red);
     border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--red);display:none
@@ -324,10 +328,17 @@ function renderCheck(){
         <div class="item-time">${fmt(t.time)}</div>
       </div>
       ${badge}
+      <div class="item-actions">
+        <button class="btn-icon" onclick="editTask('${t.id}')" title="Edit">✏️</button>
+        <button class="btn-icon" onclick="deleteTask('${t.id}')" title="Delete">🗑️</button>
+      </div>
     </div>`;
   });
 
-  html+=`</div>`;
+  html+=`</div>
+  <div style="text-align:center; padding: 12px 16px 4px;">
+    <button class="btn-ghost" onclick="addTask()">+ Add new task</button>
+  </div>`;
   document.getElementById('main').innerHTML=html;
   document.getElementById('bottom-bar').innerHTML=`<button class="btn-main" onclick="resetDay()">Plan tomorrow →</button>`;
 }
@@ -335,6 +346,46 @@ function renderCheck(){
 function toggle(id){
   const t=tasks.find(x=>x.id===id);
   if(t){ t.done=!t.done; save(); renderCheck(); }
+}
+
+function deleteTask(id){
+  if(confirm('Delete this task?')){
+    tasks = tasks.filter(t => t.id !== id);
+    save(); renderCheck(); scheduleAll();
+  }
+}
+
+function editTask(id){
+  const t = tasks.find(x => x.id === id);
+  if(!t) return;
+  const newName = prompt('Edit task name:', t.name);
+  if(newName === null || !newName.trim()) return;
+  
+  let newTime = prompt('Edit time (HH:MM) in 24-hour format:', t.time);
+  if(newTime === null) return;
+  if(!/^\d{1,2}:\d{2}$/.test(newTime)){ alert('Invalid time format. Use HH:MM'); return; }
+  
+  const [h,m] = newTime.split(':');
+  newTime = `${h.padStart(2,'0')}:${m}`;
+
+  t.name = newName.trim();
+  t.time = newTime;
+  save(); renderCheck(); scheduleAll();
+}
+
+function addTask(){
+  let newTime = prompt('Time for new task (HH:MM) in 24-hour format:', '12:00');
+  if(newTime === null) return;
+  if(!/^\d{1,2}:\d{2}$/.test(newTime)){ alert('Invalid time format. Use HH:MM'); return; }
+  const [h,m] = newTime.split(':');
+  newTime = `${h.padStart(2,'0')}:${m}`;
+
+  const newName = prompt('Task name:');
+  if(!newName || !newName.trim()) return;
+
+  const id = 'slot-' + newTime.replace(':','-') + '-' + Date.now();
+  tasks.push({id, time: newTime, name: newName.trim(), done: false, missed: false});
+  save(); renderCheck(); scheduleAll();
 }
 
 /* ── NOTIFICATIONS ── */
