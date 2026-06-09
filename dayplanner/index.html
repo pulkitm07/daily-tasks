@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Day Planner"/>
+<meta name="theme-color" content="#1a1a1a"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>Day Planner</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0ede8;
+    --border: #e0dcd5;
+    --text: #1a1a1a;
+    --muted: #7a746c;
+    --accent: #1a1a1a;
+    --green: #2d8c5e;
+    --green-bg: #eaf5ee;
+    --amber: #b86e00;
+    --amber-bg: #fff5e0;
+    --red: #c0392b;
+    --red-bg: #fdf0ee;
+    --slot-filled: #1a1a1a;
+    --slot-filled-text: #fff;
+    --radius: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --surface2: #252522;
+      --border: #333330;
+      --text: #f0ede8;
+      --muted: #888880;
+      --accent: #f0ede8;
+      --green: #4aba84;
+      --green-bg: #0d2a1c;
+      --amber: #f0a030;
+      --amber-bg: #2a1e08;
+      --red: #e06050;
+      --red-bg: #2a1210;
+      --slot-filled: #f0ede8;
+      --slot-filled-text: #111110;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+  body{display:flex;flex-direction:column;max-width:480px;margin:0 auto;height:100%}
+
+  .header{
+    padding: calc(var(--safe-top) + 16px) 20px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .header-row{display:flex;align-items:center;justify-content:space-between}
+  .header h1{font-size:19px;font-weight:600;letter-spacing:-0.3px}
+  .header .date{font-size:13px;color:var(--muted);margin-top:2px}
+  .btn-ghost{background:none;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit}
+  .btn-ghost:active{opacity:0.7}
+
+  .main{flex:1;overflow-y:auto;padding-bottom:calc(var(--safe-bottom) + 80px)}
+
+  /* ── PLANNING PHASE ── */
+  .plan-intro{padding:20px 20px 8px;font-size:14px;color:var(--muted);line-height:1.5}
+  .timeline{padding:0 16px}
+  .time-block{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+  .time-label{width:52px;flex-shrink:0;font-size:12px;color:var(--muted);padding-top:10px;text-align:right;font-variant-numeric:tabular-nums}
+  .time-label.hour{color:var(--text);font-weight:500}
+  .slot-input-wrap{flex:1;position:relative}
+  .slot-input{
+    width:100%;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:9px 12px;font-size:14px;
+    color:var(--text);font-family:inherit;transition:border-color 0.15s;
+    appearance:none;-webkit-appearance:none
+  }
+  .slot-input:focus{outline:none;border-color:var(--accent)}
+  .slot-input.filled{
+    background:var(--slot-filled);color:var(--slot-filled-text);
+    border-color:var(--slot-filled);
+  }
+  .slot-input.filled::placeholder{color:rgba(255,255,255,0.4)}
+  .time-divider{border:none;border-top:1px dashed var(--border);margin:8px 0 8px 62px}
+
+  .bottom-bar{
+    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+    width:100%;max-width:480px;
+    padding:12px 20px calc(var(--safe-bottom) + 12px);
+    background:var(--surface);border-top:1px solid var(--border);
+  }
+  .btn-main{
+    width:100%;background:var(--accent);color:var(--bg);
+    border:none;border-radius:var(--radius);padding:14px;
+    font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;
+    transition:opacity 0.15s
+  }
+  .btn-main:active{opacity:0.8}
+  .btn-main:disabled{opacity:0.35;cursor:default}
+
+  /* ── CHECKLIST PHASE ── */
+  .check-header{padding:16px 20px 12px}
+  .progress-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .progress-bar{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width 0.4s}
+  .progress-pct{font-size:13px;color:var(--muted);min-width:30px;text-align:right;font-variant-numeric:tabular-nums}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:0}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 8px;text-align:center}
+  .stat-num{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+  .stat-lbl{font-size:11px;color:var(--muted);margin-top:1px}
+  .stat.s-done .stat-num{color:var(--green)}
+  .stat.s-miss .stat-num{color:var(--red)}
+
+  .notif-bar{
+    margin:0 16px 8px;background:var(--amber-bg);border:1px solid var(--amber);
+    border-radius:var(--radius);padding:11px 14px;font-size:14px;color:var(--amber);
+    display:none;line-height:1.45
+  }
+  .notif-bar.show{display:block}
+  .notif-bar strong{font-weight:600}
+
+  .checklist{padding:0 16px}
+  .check-item{
+    display:flex;align-items:center;gap:12px;
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:13px 14px;margin-bottom:7px;
+    transition:opacity 0.2s,border-color 0.2s
+  }
+  .check-item.done{opacity:0.45}
+  .check-item.ringing{border-color:var(--amber);background:var(--amber-bg)}
+  .check-item.missed{border-color:var(--border)}
+  .checkbox{
+    width:22px;height:22px;border:1.5px solid var(--border);border-radius:6px;
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;background:var(--surface);transition:all 0.15s
+  }
+  .checkbox.checked{background:var(--green);border-color:var(--green)}
+  .checkmark{display:none;color:#fff;font-size:13px;font-weight:700}
+  .checkbox.checked .checkmark{display:block}
+  .item-body{flex:1;min-width:0}
+  .item-name{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .check-item.done .item-name{text-decoration:line-through;color:var(--muted)}
+  .item-time{font-size:12px;color:var(--muted);margin-top:1px}
+  .badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .badge-up{background:var(--surface2);color:var(--muted)}
+  .badge-now{background:var(--amber-bg);color:var(--amber)}
+  .badge-done{background:var(--green-bg);color:var(--green)}
+  .badge-miss{background:var(--red-bg);color:var(--red)}
+
+  .perm-warn{
+    margin:0 16px 12px;background:var(--red-bg);border:1px solid var(--red);
+    border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--red);display:none
+  }
+  .perm-warn.show{display:block}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-row">
+    <div>
+      <h1>Day Planner</h1>
+      <div class="date" id="today-date"></div>
+    </div>
+    <button class="btn-ghost" id="reset-btn" style="display:none" onclick="resetDay()">Reset day</button>
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="bottom-bar" id="bottom-bar"></div>
+
+<script>
+const STORE = 'dp_v3';
+let tasks = [];      // {id, time, name, done}
+let timers = [];
+let phase = 'plan';  // 'plan' | 'check'
+
+/* ── UTILS ── */
+function fmt(t){
+  const [h,m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h<12?'am':'pm'}`;
+}
+function todayStr(){
+  return new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+}
+function slotId(t){ return 'slot-'+t.replace(':','-'); }
+function timeToMs(t){
+  const [h,m]=t.split(':').map(Number);
+  const d=new Date(); d.setHours(h,m,0,0); return d.getTime();
+}
+
+/* ── GENERATE SLOTS ── */
+function genSlots(){
+  const slots=[];
+  for(let h=0;h<24;h++) for(let m of [0,30]) slots.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  return slots;
+}
+
+/* ── SAVE / LOAD ── */
+function save(){
+  try{ localStorage.setItem(STORE, JSON.stringify({tasks,phase})); }catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(STORE)||'null');
+    if(d){tasks=d.tasks||[];phase=d.phase||'plan';}
+  }catch(e){}
+}
+
+/* ── RENDER PLAN PHASE ── */
+function renderPlan(){
+  document.getElementById('reset-btn').style.display='none';
+  const slots=genSlots();
+  const taskMap={};
+  tasks.forEach(t=>taskMap[t.time]=t.name);
+
+  let html='<p class="plan-intro">Tap a time slot and type your task. Leave it blank to skip that slot.</p><div class="timeline">';
+  slots.forEach((s,i)=>{
+    const isHour=s.endsWith(':00');
+    html+=`<div class="time-block">
+      <div class="time-label ${isHour?'hour':''}">${isHour?fmt(s).replace(':00',''):''}</div>
+      <div class="slot-input-wrap">
+        <input class="slot-input ${taskMap[s]?'filled':''}" id="${slotId(s)}"
+          type="text" placeholder="${isHour?fmt(s):fmt(s)}"
+          value="${taskMap[s]||''}" maxlength="60"
+          data-time="${s}"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          oninput="onSlotInput(this)" onblur="onSlotBlur(this)"/>
+      </div>
+    </div>`;
+    if(isHour && i>0) html=html.replace('<div class="time-block">','<hr class="time-divider"/><div class="time-block">');
+  });
+  html+='</div>';
+  document.getElementById('main').innerHTML=html;
+  document.getElementById('bottom-bar').innerHTML=`<button class="btn-main" onclick="startDay()">Start my day →</button>`;
+}
+
+function onSlotInput(el){
+  el.classList.toggle('filled', el.value.trim()!=='');
+  syncTasksFromSlots();
+}
+function onSlotBlur(el){
+  syncTasksFromSlots(); save();
+}
+function syncTasksFromSlots(){
+  const inputs=document.querySelectorAll('.slot-input');
+  tasks=[];
+  inputs.forEach(inp=>{
+    const v=inp.value.trim();
+    if(v) tasks.push({id:inp.dataset.time, time:inp.dataset.time, name:v, done:false, missed:false});
+  });
+}
+
+/* ── START DAY ── */
+async function startDay(){
+  syncTasksFromSlots();
+  const filled=tasks.filter(t=>t.name);
+  if(!filled.length){ alert('Add at least one task first!'); return; }
+  tasks=filled;
+
+  let granted=false;
+  if('Notification' in window){
+    const p=await Notification.requestPermission();
+    granted=p==='granted';
+  }
+  if(!granted){
+    document.getElementById('perm-warn') && (document.getElementById('perm-warn').classList.add('show'));
+  }
+
+  phase='check';
+  save();
+  renderCheck();
+  scheduleAll();
+}
+
+/* ── RENDER CHECK PHASE ── */
+function renderCheck(){
+  document.getElementById('reset-btn').style.display='block';
+  const done=tasks.filter(t=>t.done).length;
+  const now=Date.now();
+  const past=tasks.filter(t=>!t.done && timeToMs(t.time)+60000<now).length;
+  const left=tasks.length-done-past;
+  const pct=tasks.length?Math.round(done/tasks.length*100):0;
+
+  const sorted=[...tasks].sort((a,b)=>a.time.localeCompare(b.time));
+
+  let html=`<div class="check-header">
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="pfill" style="width:${pct}%"></div></div>
+      <div class="progress-pct">${pct}%</div>
+    </div>
+    <div class="stats">
+      <div class="stat s-done"><div class="stat-num">${done}</div><div class="stat-lbl">done</div></div>
+      <div class="stat s-miss"><div class="stat-num">${past}</div><div class="stat-lbl">missed</div></div>
+      <div class="stat"><div class="stat-num">${left}</div><div class="stat-lbl">remaining</div></div>
+    </div>
+  </div>
+  <div class="perm-warn" id="perm-warn">Notifications blocked. Reminders will appear as in-app banners only.</div>
+  <div class="notif-bar" id="notif-bar"></div>
+  <div class="checklist">`;
+
+  sorted.forEach(t=>{
+    const ms=timeToMs(t.time);
+    const isPast=Date.now()>ms+60000;
+    let badge='', cls='check-item';
+    if(t.done){ badge='<span class="badge badge-done">done</span>'; cls+=' done'; }
+    else if(isPast){ badge='<span class="badge badge-miss">missed?</span>'; cls+=' missed'; }
+    else{ badge='<span class="badge badge-up">upcoming</span>'; }
+
+    html+=`<div class="${cls}" id="ci-${t.id}">
+      <div class="checkbox ${t.done?'checked':''}" onclick="toggle('${t.id}')" role="checkbox" aria-checked="${t.done}" aria-label="${t.name}">
+        <span class="checkmark">✓</span>
+      </div>
+      <div class="item-body">
+        <div class="item-name">${t.name}</div>
+        <div class="item-time">${fmt(t.time)}</div>
+      </div>
+      ${badge}
+    </div>`;
+  });
+
+  html+=`</div>`;
+  document.getElementById('main').innerHTML=html;
+  document.getElementById('bottom-bar').innerHTML=`<button class="btn-main" onclick="resetDay()">Plan tomorrow →</button>`;
+}
+
+function toggle(id){
+  const t=tasks.find(x=>x.id===id);
+  if(t){ t.done=!t.done; save(); renderCheck(); }
+}
+
+/* ── NOTIFICATIONS ── */
+function scheduleAll(){
+  timers.forEach(clearTimeout); timers=[];
+  const sorted=[...tasks].sort((a,b)=>a.time.localeCompare(b.time));
+  sorted.forEach((task,idx)=>{
+    const alertMs=timeToMs(task.time)-60000;
+    const delay=alertMs-Date.now();
+    if(delay>0){
+      const tid=setTimeout(()=>fireReminder(task,sorted[idx-1]||null), delay);
+      timers.push(tid);
+    }
+  });
+}
+
+function fireReminder(next, prev){
+  const msg=prev
+    ? `"${next.name}" in 1 min — did you finish "${prev.name}"?`
+    : `"${next.name}" starts in 1 minute!`;
+
+  const bar=document.getElementById('notif-bar');
+  if(bar){ bar.innerHTML=`<strong>⏰ Up next:</strong> ${msg}`; bar.classList.add('show'); setTimeout(()=>bar.classList.remove('show'),25000); }
+
+  if(Notification.permission==='granted'){
+    try{ new Notification('Day Planner',{body:msg,icon:'icons/icon-192.png',badge:'icons/icon-192.png',vibrate:[200,100,200]}); }catch(e){}
+  }
+  renderCheck();
+}
+
+/* ── RESET ── */
+function resetDay(){
+  if(!confirm('Clear today's plan and start fresh?')) return;
+  tasks=[]; phase='plan'; timers.forEach(clearTimeout); timers=[];
+  try{ localStorage.removeItem(STORE); }catch(e){}
+  renderPlan();
+}
+
+/* ── INIT ── */
+document.getElementById('today-date').textContent=todayStr();
+load();
+if(phase==='check'){ renderCheck(); scheduleAll(); }
+else renderPlan();
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+setInterval(()=>{ if(phase==='check') renderCheck(); }, 30000);
+</script>
+</body>
+</html>
