@@ -184,7 +184,7 @@
 <script>
 const STORE = 'dp_v3';
 let tasks = [];      // {id, time, name, done}
-let timers = [];
+let notifiedTasks = new Set();
 let phase = 'plan';  // 'plan' | 'check'
 
 /* ── UTILS ── */
@@ -280,9 +280,9 @@ async function startDay(){
   }
 
   phase='check';
+  notifiedTasks.clear();
   save();
   renderCheck();
-  scheduleAll();
 }
 
 /* ── RENDER CHECK PHASE ── */
@@ -351,7 +351,7 @@ function toggle(id){
 function deleteTask(id){
   if(confirm('Delete this task?')){
     tasks = tasks.filter(t => t.id !== id);
-    save(); renderCheck(); scheduleAll();
+    save(); renderCheck();
   }
 }
 
@@ -370,7 +370,8 @@ function editTask(id){
 
   t.name = newName.trim();
   t.time = newTime;
-  save(); renderCheck(); scheduleAll();
+  notifiedTasks.delete(id); // reset notification state if time changed
+  save(); renderCheck();
 }
 
 function addTask(){
@@ -385,19 +386,23 @@ function addTask(){
 
   const id = 'slot-' + newTime.replace(':','-') + '-' + Date.now();
   tasks.push({id, time: newTime, name: newName.trim(), done: false, missed: false});
-  save(); renderCheck(); scheduleAll();
+  save(); renderCheck();
 }
 
 /* ── NOTIFICATIONS ── */
-function scheduleAll(){
-  timers.forEach(clearTimeout); timers=[];
-  const sorted=[...tasks].sort((a,b)=>a.time.localeCompare(b.time));
-  sorted.forEach((task,idx)=>{
-    const alertMs=timeToMs(task.time)-60000;
-    const delay=alertMs-Date.now();
-    if(delay>0){
-      const tid=setTimeout(()=>fireReminder(task,sorted[idx-1]||null), delay);
-      timers.push(tid);
+function checkReminders(){
+  if(phase !== 'check') return;
+  const now = Date.now();
+  const sorted = [...tasks].sort((a,b)=>a.time.localeCompare(b.time));
+  
+  sorted.forEach((task, idx) => {
+    const taskMs = timeToMs(task.time);
+    const alertMs = taskMs - 60000;
+    
+    // Notify if we are within the 1-minute window before the task and haven't notified yet
+    if (now >= alertMs && now < taskMs && !notifiedTasks.has(task.id)) {
+      notifiedTasks.add(task.id);
+      fireReminder(task, sorted[idx-1] || null);
     }
   });
 }
@@ -427,7 +432,7 @@ function fireReminder(next, prev){
 /* ── RESET ── */
 function resetDay(){
   if(!confirm("Clear today's plan and start fresh?")) return;
-  tasks=[]; phase='plan'; timers.forEach(clearTimeout); timers=[];
+  tasks=[]; phase='plan'; notifiedTasks.clear();
   try{ localStorage.removeItem(STORE); }catch(e){}
   renderPlan();
 }
@@ -435,14 +440,20 @@ function resetDay(){
 /* ── INIT ── */
 document.getElementById('today-date').textContent=todayStr();
 load();
-if(phase==='check'){ renderCheck(); scheduleAll(); }
+if(phase==='check'){ renderCheck(); }
 else renderPlan();
 
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-setInterval(()=>{ if(phase==='check') renderCheck(); }, 30000);
+// Check for notifications and UI updates every 5 seconds
+setInterval(() => {
+  if (phase === 'check') {
+    renderCheck();
+    checkReminders();
+  }
+}, 5000);
 </script>
 </body>
 </html>
