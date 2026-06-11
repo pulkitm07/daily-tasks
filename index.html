@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
 <title>Day Planner</title>
+<script src="native.bundle.js"></script>
 <style>
   :root {
     --bg: #f7f6f3;
@@ -341,6 +342,10 @@ function renderCheck(){
   </div>`;
   document.getElementById('main').innerHTML=html;
   document.getElementById('bottom-bar').innerHTML=`<button class="btn-main" onclick="resetDay()">Plan tomorrow →</button>`;
+
+  if (window.scheduleNativeAlarms) {
+    window.scheduleNativeAlarms(tasks, timeToMs);
+  }
 }
 
 function toggle(id){

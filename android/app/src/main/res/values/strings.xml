@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DayPlanner</string>
+    <string name="title_activity_main">DayPlanner</string>
+    <string name="package_name">com.dayplanner.app</string>
+    <string name="custom_url_scheme">com.dayplanner.app</string>
+</resources>
