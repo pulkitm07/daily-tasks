@@ -19,7 +19,7 @@ jobs:
         node-version: '20'
 
     - name: Install Dependencies
-      run: npm install
+      run: npm install --no-package-lock
 
     - name: Build Web Assets
       run: |
