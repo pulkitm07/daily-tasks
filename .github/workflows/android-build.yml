@@ -21,6 +21,13 @@ jobs:
     - name: Install Dependencies
       run: npm install
 
+    - name: Build Web Assets
+      run: |
+        mkdir -p www
+        cp index.html manifest.json sw.js www/
+        cp -r icons www/icons || true
+        npx esbuild native.js --bundle --outfile=www/native.bundle.js
+
     - name: Sync Capacitor
       run: npx cap sync android
 
